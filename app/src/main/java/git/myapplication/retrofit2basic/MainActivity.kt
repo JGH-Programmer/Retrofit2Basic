@@ -2,19 +2,22 @@ package git.myapplication.retrofit2basic
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import git.myapplication.retrofit2basic.databinding.ActivityMainBinding
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class MainActivity : AppCompatActivity() {
 
-    private val binding: ActivityMainBinding by lazy{
+    private val binding: ActivityMainBinding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
     }
-    private val EmgMedResponse by lazy {
-        EmgMedResponse()
+    private val myRecyclerViewAdapter by lazy {
+        EmgMedAdapter()
     }
-
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,8 +26,38 @@ class MainActivity : AppCompatActivity() {
 
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-            adapter = EmgMedResponse
+            adapter = myRecyclerViewAdapter
             addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
         }
+
+        binding.btnGet.setOnClickListener {
+            retrofitWork()
+        }
     }
+
+    private fun retrofitWork() {
+        val service = RetrofitApi.emgMedService
+
+        service.getEmgMedData(getString(R.string.api_key), "json")
+            .enqueue(object : Callback<EmgMedResponse> {
+                override fun onResponse(
+                    call: Call<EmgMedResponse>,
+                    response: Response<EmgMedResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        // Log.d("TAG", response.body().toString())
+                        val result = response.body()?.TBGGSCREECLSTM?.get(1)?.row
+                        myRecyclerViewAdapter.submitList(result!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<EmgMedResponse>, t: Throwable) {
+                    Log.d("TAG", t.message.toString())
+                }
+            })
+
+
+    }
+
+
 }
